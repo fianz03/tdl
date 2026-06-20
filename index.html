@@ -228,8 +228,23 @@
     <div class="container">
         <!-- Editor Panel -->
         <div class="panel">
-            <h1>✍️ Form TDL</h1>
-            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h1 style="margin-bottom: 0;">✍️ Form TDL</h1>
+                <button onclick="toggleImport()" class="outline" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">
+                    📋 Import TDL Lama
+                </button>
+            </div>
+
+            <div id="importSection" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px dashed var(--accent-color);">
+                <label>Paste TDL Lama di sini:</label>
+                <textarea id="importArea" style="min-height: 150px; font-family: monospace; font-size: 0.8rem; margin-bottom: 1rem;" placeholder="=========================================\n          DAILY TO-DO LIST\n..."></textarea>
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="parseTDL()">Gunakan Data Ini</button>
+                    <button class="outline" onclick="toggleImport()">Batal</button>
+                </div>
+            </div>
+
+            <div id="formContent">
             <div class="form-group">
                 <label>Tanggal</label>
                 <input type="date" id="dateInput">
@@ -254,6 +269,7 @@
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Projek Baru
             </button>
+            </div>
         </div>
 
         <!-- Output Panel -->
@@ -274,6 +290,125 @@
         const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         
         let projectIdCounter = 0;
+
+        function toggleImport() {
+            const importSec = document.getElementById('importSection');
+            const formCont = document.getElementById('formContent');
+            if (importSec.style.display === 'none') {
+                importSec.style.display = 'block';
+                formCont.style.display = 'none';
+                document.getElementById('importArea').value = '';
+            } else {
+                importSec.style.display = 'none';
+                formCont.style.display = 'block';
+            }
+        }
+
+        function parseTDL() {
+            const text = document.getElementById('importArea').value;
+            if (!text.trim()) return;
+
+            const dateMatch = text.match(/Tanggal\s*:\s*[^,]+,\s*(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+            if (dateMatch) {
+                const day = dateMatch[1].padStart(2, '0');
+                const monthStr = dateMatch[2].toLowerCase();
+                const year = dateMatch[3];
+                const monthsMap = {
+                    'januari': '01', 'februari': '02', 'maret': '03', 'april': '04', 'mei': '05', 'juni': '06',
+                    'juli': '07', 'agustus': '08', 'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
+                };
+                const month = monthsMap[monthStr] || '01';
+                document.getElementById('dateInput').value = `${year}-${month}-${day}`;
+            }
+
+            const timeMatch = text.match(/Waktu\s*:\s*([\d:]+)\s*-\s*([^ \n]+)/);
+            if (timeMatch) {
+                document.getElementById('startTimeInput').value = timeMatch[1];
+                document.getElementById('endTimeInput').value = timeMatch[2] === '[End]' ? '' : timeMatch[2];
+            }
+
+            document.getElementById('projectsContainer').innerHTML = '';
+            
+            const projectBlocks = text.split(/\[ PROJECT:\s*(.*?)\s*\]/g);
+            
+            if (projectBlocks.length > 1) {
+                for (let i = 1; i < projectBlocks.length; i += 2) {
+                    const projName = projectBlocks[i];
+                    let content = projectBlocks[i+1];
+                    content = content.replace(/={10,}/g, '');
+
+                    let progressTxt = '';
+                    let doneTxt = '';
+
+                    const progressSplit = content.split('>> IN PROGRESS');
+                    if (progressSplit.length > 1) {
+                        const doneSplit = progressSplit[1].split('>> DONE');
+                        progressTxt = doneSplit[0].trim();
+                        if (doneSplit.length > 1) {
+                            doneTxt = doneSplit[1].trim();
+                        }
+                    } else {
+                        const doneSplit = content.split('>> DONE');
+                        if (doneSplit.length > 1) {
+                            doneTxt = doneSplit[1].trim();
+                        }
+                    }
+
+                    progressTxt = cleanPrefixes(progressTxt);
+                    doneTxt = cleanPrefixes(doneTxt);
+
+                    addProjectWithValue(projName, progressTxt, doneTxt);
+                }
+            } else {
+                addProject();
+            }
+
+            toggleImport();
+            generateOutput();
+        }
+
+        function cleanPrefixes(text) {
+            if (!text) return '';
+            return text.split('\n').map(line => {
+                let cl = line.replace(/^\[[ x]\]\s*/, '');
+                if (cl.trim() === '-') return '';
+                return cl;
+            }).filter(line => line.trim() !== '').join('\n').trim();
+        }
+
+        function addProjectWithValue(name, progress, done) {
+            const id = projectIdCounter++;
+            const container = document.getElementById('projectsContainer');
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            card.id = `project-${id}`;
+            
+            let optionsHTML = '';
+            ['ERP 1', 'ERP 2', 'WEB'].forEach(opt => {
+                optionsHTML += `<option value="${opt}" ${opt === name.trim() ? 'selected' : ''}>${opt}</option>`;
+            });
+
+            card.innerHTML = `
+                <button class="remove-btn" onclick="removeProject(${id})" title="Hapus Projek">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div class="form-group">
+                    <label>Nama Projek</label>
+                    <select class="project-select" onchange="generateOutput()">
+                        ${optionsHTML}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>In Progress</label>
+                    <textarea class="progress-input" oninput="generateOutput()">${progress}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Done</label>
+                    <textarea class="done-input" oninput="generateOutput()">${done}</textarea>
+                </div>
+            `;
+            container.appendChild(card);
+        }
 
         // Initialize with current date and one default project
         document.addEventListener('DOMContentLoaded', () => {
