@@ -253,7 +253,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Time</label>
-                    <input type="time" id="startTimeInput" value="08:00">
+                    <input type="time" id="startTimeInput">
                 </div>
                 <div class="form-group">
                     <label>End Time</label>
@@ -449,7 +449,7 @@
 
                 <div class="form-group">
                     <label>In Progress</label>
-                    <textarea class="progress-input" placeholder="Contoh:&#10;Master > Kehadiran&#10;    - Revisi layout" oninput="generateOutput()">Master > Kehadiran > Jenis Izin&#10;    - Revisi layout (Terdapat error saat cetak)</textarea>
+                    <textarea class="progress-input" placeholder="Contoh:&#10;Master > Kehadiran&#10;    - Revisi layout" oninput="generateOutput()"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -512,7 +512,7 @@
 
         function generateOutput() {
             const dateVal = document.getElementById('dateInput').value;
-            const startVal = document.getElementById('startTimeInput').value || '08:00';
+            const startVal = document.getElementById('startTimeInput').value || '[Start]';
             const endVal = document.getElementById('endTimeInput').value || '[End]';
 
             let output = `=========================================\n`;
