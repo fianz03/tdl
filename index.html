@@ -386,7 +386,7 @@
             card.id = `project-${id}`;
             
             let optionsHTML = '';
-            ['ERP 1', 'ERP 2', 'WEB'].forEach(opt => {
+            ['ERP 1', 'ERP 2', 'WEB', 'Flutter'].forEach(opt => {
                 optionsHTML += `<option value="${opt}" ${opt === name.trim() ? 'selected' : ''}>${opt}</option>`;
             });
 
@@ -446,6 +446,7 @@
                         <option value="ERP 1">ERP 1</option>
                         <option value="ERP 2" selected>ERP 2</option>
                         <option value="WEB">WEB</option>
+                        <option value="Flutter">Flutter</option>
                     </select>
                 </div>
 
